@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zion ERP</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div id="login">
+    <div class="login-box">
+      <div class="logo-wrap">
+        <img id="logoSistema" src="SUA-LOGO-AQUI.png" alt="Logo Zion ERP">
+      </div>
+      <h2 class="titulo-login">Zion ERP</h2>
+      <p class="subtitulo-login">Gestão administrativa inteligente para sua loja</p>
+      <input id="user" placeholder="Usuário">
+      <input id="pass" type="password" placeholder="Senha">
+      <button class="btn-login" onclick="login()">Entrar</button>
+      <p class="login-info">Primeiro acesso padrão: <b>admin</b> / <b>123</b></p>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <aside id="sidebar" class="sidebar">
+      <div class="topo-menu">
+        <button class="toggle-btn" onclick="toggleMenu()">☰</button>
+        <span class="logo-text">Zion ERP</span>
+      </div>
+
+      <div class="menu-scroll">
+        <div class="menu-item" onclick="show('dashboard')">
+          <span class="icon">📊</span>
+          <span class="menu-label">Dashboard</span>
+        </div>
+
+        <div class="menu-item" onclick="toggleSub('financeiroSub')">
+          <span class="icon">💰</span>
+          <span class="menu-label">Financeiro</span>
+        </div>
+        <div id="financeiroSub" class="submenu">
+          <div class="submenu-item" onclick="show('vendas')">
+            <span class="icon">🛒</span>
+            <span class="menu-label">Vendas</span>
+          </div>
+          <div class="submenu-item" onclick="show('fluxo')">
+            <span class="icon">💵</span>
+            <span class="menu-label">Fluxo de Caixa</span>
+          </div>
+          <div class="submenu-item" onclick="show('receber')">
+            <span class="icon">📥</span>
+            <span class="menu-label">Contas a Receber</span>
+          </div>
+          <div class="submenu-item" onclick="show('pagar')">
+            <span class="icon">📤</span>
+            <span class="menu-label">Contas a Pagar</span>
+          </div>
+        </div>
+
+        <div class="menu-item" onclick="toggleSub('cadastrosSub')">
+          <span class="icon">📁</span>
+          <span class="menu-label">Cadastros</span>
+        </div>
+        <div id="cadastrosSub" class="submenu">
+          <div class="submenu-item" onclick="show('clientes')">
+            <span class="icon">👤</span>
+            <span class="menu-label">Clientes</span>
+          </div>
+          <div class="submenu-item" onclick="show('vendedores')">
+            <span class="icon">🧑‍💼</span>
+            <span class="menu-label">Vendedores</span>
+          </div>
+          <div class="submenu-item" onclick="show('produtos')">
+            <span class="icon">📦</span>
+            <span class="menu-label">Produtos</span>
+          </div>
+          <div class="submenu-item" onclick="show('config')">
+            <span class="icon">⚙️</span>
+            <span class="menu-label">Configurações</span>
+          </div>
+        </div>
+
+        <div class="menu-item" onclick="show('relatorios')">
+          <span class="icon">📄</span>
+          <span class="menu-label">Relatórios</span>
+        </div>
+      </div>
+
+      <div class="menu-footer">
+        <div class="menu-item sair" onclick="logout()">
+          <span class="icon">🚪</span>
+          <span class="menu-label">Sair</span>
+        </div>
+      </div>
+    </aside>
+
+    <main id="mainContent" class="main-content">
+      <div class="container">
+
+        <div id="dashboard" class="card">
+          <div class="section-title">
+            <h3>Dashboard</h3>
+            <button onclick="gerarDRE()">Gerar DRE PDF</button>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi" id="fatBox">Faturamento: R$ 0,00</div>
+            <div class="kpi" id="lucBox">Lucro: R$ 0,00</div>
+            <div class="kpi" id="ticketBox">Ticket Médio: R$ 0,00</div>
+            <div class="kpi" id="metaProgBox">Meta: R$ 0,00 | Atingido: 0%</div>
+          </div>
+
+          <div class="saldos-grid">
+            <div class="saldo-card">
+              <h4>Caixa físico</h4>
+              <div id="saldoCaixaFisico">R$ 0,00</div>
+            </div>
+            <div class="saldo-card">
+              <h4>Saldo total em contas</h4>
+              <div id="saldoTotalContas">R$ 0,00</div>
+            </div>
+            <div class="saldo-card">
+              <h4>Contas a pagar do mês</h4>
+              <div id="dashPagarMes">R$ 0,00</div>
+            </div>
+            <div class="saldo-card">
+              <h4>Contas a receber do mês</h4>
+              <div id="dashReceberMes">R$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="card card-interno">
+            <h4>Alertas de vencimento</h4>
+            <div id="alertasDashboard" class="alertas-dashboard">Sem alertas no momento.</div>
+          </div>
+
+          <canvas id="grafVendas"></canvas>
+          <canvas id="grafVendedor"></canvas>
+        </div>
+
+        <div id="clientes" class="card hidden">
+          <div class="section-title">
+            <h3>Clientes</h3>
+            <button onclick="limparFormularioCliente(); show('novoCliente')">+ Novo Cliente</button>
+          </div>
+          <table id="t_clientes"></table>
+        </div>
+
+        <div id="novoCliente" class="card hidden">
+          <div class="section-title">
+            <h3>Novo Cliente</h3>
+            <button onclick="limparFormularioCliente(); show('clientes')">Voltar</button>
+          </div>
+          <div class="form-grid">
+            <input id="c_nome" placeholder="Nome completo">
+            <input id="c_cpf" placeholder="CPF">
+            <input id="c_rg" placeholder="RG">
+            <input id="c_rua" placeholder="Rua">
+            <input id="c_cep" placeholder="CEP">
+            <input id="c_bairro" placeholder="Bairro">
+            <input id="c_cidade" placeholder="Cidade">
+            <input id="c_estado" placeholder="Estado">
+            <input id="c_pais" placeholder="País">
+            <input id="c_fixo" placeholder="Telefone fixo">
+            <input id="c_whats" placeholder="WhatsApp">
+            <input id="c_email" placeholder="E-mail">
+          </div>
+          <p id="erroCliente" class="erro-form hidden">Preencha todos os campos obrigatórios.</p>
+          <div style="margin-top: 12px;">
+            <button onclick="addCliente()">Salvar Cliente</button>
+          </div>
+        </div>
+
+        <div id="vendedores" class="card hidden">
+          <div class="section-title">
+            <h3>Vendedores</h3>
+            <button onclick="limparFormularioVendedor(); show('novoVendedorTela')">+ Novo Vendedor</button>
+          </div>
+          <table id="t_vendedores"></table>
+        </div>
+
+        <div id="novoVendedorTela" class="card hidden">
+          <div class="section-title">
+            <h3>Novo Vendedor</h3>
+            <button onclick="cancelarEdicaoVendedor()">Voltar</button>
+          </div>
+          <div class="form-grid">
+            <input id="vd_nome" placeholder="Nome completo">
+            <input id="vd_cpf" placeholder="CPF">
+            <input id="vd_telefone" placeholder="Telefone">
+            <input id="vd_whats" placeholder="WhatsApp">
+            <input id="vd_email" placeholder="E-mail">
+            <input id="vd_cargo" placeholder="Cargo">
+          </div>
+          <p id="erroVendedor" class="erro-form hidden">Preencha todos os campos obrigatórios.</p>
+          <div style="margin-top: 12px;">
+            <button onclick="addVendedorCadastro()">Salvar Vendedor</button>
+          </div>
+        </div>
+
+        <div id="produtos" class="card hidden">
+          <h3>Produtos</h3>
+          <div class="row">
+            <input id="p_nome" placeholder="Nome">
+            <input id="p_custo" type="number" step="0.01" placeholder="Custo">
+            <input id="p_preco" type="number" step="0.01" placeholder="Preço">
+            <input id="p_qtd" type="number" placeholder="Qtd">
+            <button onclick="addProduto()">Adicionar</button>
+          </div>
+          <table id="t_produtos"></table>
+        </div>
+
+        <div id="vendas" class="card hidden">
+          <h3>Vendas</h3>
+
+          <div class="form-grid vendas-grid">
+            <select id="v_cliente"></select>
+            <select id="v_vendedor"></select>
+            <select id="v_pagamento" onchange="toggleParcelasVenda()">
+              <option>Dinheiro</option>
+              <option>PIX</option>
+              <option>Cartão</option>
+              <option>Fiado</option>
+            </select>
+            <select id="v_banco"></select>
+          </div>
+
+          <div class="section-subtitle">Adicionar item à compra</div>
+          <div class="row">
+            <select id="v_produto" onchange="preencherDadosProdutoVenda()"></select>
+            <input id="v_busca_codigo" placeholder="Digite/Ler código de barras">
+            <button class="btn-secundario" onclick="buscarProdutoPorCodigo()">Buscar código</button>
+            <input id="v_codigo_barra" placeholder="Código de barras" readonly>
+            <input id="v_preco_unit" placeholder="Preço unitário" readonly>
+            <input id="v_qtd" type="number" placeholder="Qtd" value="1" min="1">
+            <select id="v_desc_tipo">
+              <option value="nenhum">Sem desconto</option>
+              <option value="percentual">Desconto %</option>
+              <option value="valor">Desconto R$</option>
+            </select>
+            <input id="v_desc_valor" type="number" step="0.01" placeholder="Valor desconto">
+            <button onclick="adicionarItemCarrinho()">Adicionar Item</button>
+          </div>
+
+          <div class="card card-interno">
+            <div class="section-title">
+              <h4>Itens da compra</h4>
+              <button class="btn-secundario" onclick="limparCarrinhoVenda()">Limpar Compra</button>
+            </div>
+            <table id="t_carrinho"></table>
+            <div class="totais-compra">
+              <div><b>Subtotal:</b> <span id="cartSubtotal">R$ 0,00</span></div>
+              <div><b>Descontos:</b> <span id="cartDesconto">R$ 0,00</span></div>
+              <div><b>Total da compra:</b> <span id="cartTotal">R$ 0,00</span></div>
+            </div>
+          </div>
+
+          <div id="wrapParcelas" class="hidden row parcelas-row">
+            <input id="v_parcelas" type="number" placeholder="Parcelas" value="1" min="1">
+            <input id="v_valorParcela" type="text" placeholder="Valor da parcela" readonly>
+          </div>
+
+          <div class="actions-end">
+            <button onclick="finalizarVenda()">Finalizar Venda</button>
+          </div>
+
+          <h4>Histórico de vendas</h4>
+          <table id="t_vendas"></table>
+        </div>
+
+        <div id="fluxo" class="card hidden">
+          <div class="section-title">
+            <h3>Fluxo de Caixa</h3>
+          </div>
+
+          <div class="card card-interno">
+            <h4>Saldos iniciais</h4>
+            <div class="row">
+              <input id="saldoInicialCaixa" type="number" step="0.01" placeholder="Caixa físico inicial">
+              <button onclick="salvarSaldoInicialCaixa()">Salvar Caixa Inicial</button>
+            </div>
+            <div class="row">
+              <select id="contaSaldoInicial"></select>
+              <input id="valorSaldoInicialConta" type="number" step="0.01" placeholder="Saldo inicial da conta">
+              <button onclick="salvarSaldoInicialConta()">Salvar Saldo da Conta</button>
+            </div>
+          </div>
+
+          <div class="card card-interno">
+            <h4>Lançamento manual</h4>
+            <div class="row">
+              <input type="hidden" id="f_edit_id">
+              <input id="f_desc" placeholder="Descrição">
+              <input id="f_valor" type="number" step="0.01" placeholder="Valor">
+              <input id="f_data" type="date">
+              <select id="f_tipo">
+                <option>Entrada</option>
+                <option>Saída</option>
+              </select>
+              <select id="f_conta">
+                <option>Caixa</option>
+              </select>
+              <button onclick="addFluxo()">Salvar Lançamento</button>
+              <button class="btn-secundario" onclick="cancelarEdicaoFluxo()">Cancelar</button>
+            </div>
+          </div>
+
+          <div class="card card-interno">
+            <h4>Filtro por período</h4>
+            <div class="row">
+              <input id="fluxo_data_inicial" type="date">
+              <input id="fluxo_data_final" type="date">
+              <button onclick="loadFluxo()">Filtrar</button>
+              <button class="btn-secundario" onclick="limparFiltroFluxo()">Limpar filtro</button>
+            </div>
+          </div>
+
+          <div class="saldos-grid">
+            <div class="saldo-card">
+              <h4>Caixa físico atual</h4>
+              <div id="saldoCaixaFluxo">R$ 0,00</div>
+            </div>
+            <div class="saldo-card">
+              <h4>Total em contas</h4>
+              <div id="saldoContasFluxo">R$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="card card-interno">
+            <h4>Saldos por conta</h4>
+            <table id="t_saldos_conta"></table>
+          </div>
+
+          <table id="t_fluxo"></table>
+        </div>
+
+        <div id="receber" class="card hidden">
+          <div class="section-title">
+            <h3>Contas a Receber</h3>
+            <button onclick="gerarRelatorioReceberCompetencia()">Relatório da competência</button>
+          </div>
+          <div class="row filtros-row">
+            <input id="r_filtro_competencia" type="month">
+          </div>
+          <table id="t_receber"></table>
+        </div>
+
+        <div id="pagar" class="card hidden">
+          <div class="section-title">
+            <h3>Contas a Pagar</h3>
+            <button onclick="gerarRelatorioPagarCompetencia()">Relatório da competência</button>
+          </div>
+
+          <div class="row">
+            <input type="hidden" id="pg_edit_id">
+            <input id="pg_fornecedor" placeholder="Fornecedor">
+            <input id="pg_cnpj" placeholder="CNPJ do fornecedor">
+            <input id="pg_desc" placeholder="Descrição">
+            <input id="pg_valor" type="number" step="0.01" placeholder="Valor">
+            <input id="pg_competencia" type="month">
+            <input id="pg_vencimento" type="date">
+            <select id="pg_conta">
+              <option>Caixa</option>
+            </select>
+            <button onclick="addPagar()">Salvar Conta</button>
+            <button class="btn-secundario" onclick="cancelarEdicaoPagar()">Cancelar</button>
+          </div>
+
+          <div class="row filtros-row">
+            <input id="pg_filtro_competencia" type="month">
+          </div>
+
+          <table id="t_pagar"></table>
+        </div>
+
+        <div id="config" class="card hidden">
+          <h3>Configurações</h3>
+
+          <h4>Meta mensal</h4>
+          <div class="row">
+            <input id="meta" type="number" step="0.01" placeholder="Valor meta">
+            <button onclick="salvarMeta()">Salvar</button>
+          </div>
+
+          <h4>Vendedores</h4>
+          <div class="row">
+            <input id="novoVendedor" placeholder="Nome vendedor">
+            <button onclick="addVendedor()">Adicionar</button>
+          </div>
+
+          <h4>Bancos / Contas</h4>
+          <div class="row">
+            <input id="novoBanco" placeholder="Banco">
+            <button onclick="addBanco()">Adicionar</button>
+          </div>
+
+          <h4>Usuários</h4>
+          <div class="row">
+            <input id="novoUser" placeholder="Usuário">
+            <input id="novoPass" placeholder="Senha">
+            <button onclick="addUser()">Criar</button>
+          </div>
+
+          <h4>Dados da empresa</h4>
+          <div class="empresa-box">
+            <div><b>Razão Social:</b> <span id="empresaRazao"></span></div>
+            <div><b>CNPJ:</b> <span id="empresaCnpj"></span></div>
+            <div><b>Endereço:</b> <span id="empresaEndereco"></span></div>
+            <div><b>E-mail:</b> <span id="empresaEmail"></span></div>
+            <div><b>Telefone:</b> <span id="empresaTelefone"></span></div>
+          </div>
+        </div>
+
+        <div id="relatorios" class="card hidden">
+          <div class="section-title">
+            <h3>Relatórios</h3>
+          </div>
+
+          <div class="card card-interno">
+            <div class="section-title">
+              <h4>Etiquetas de produtos</h4>
+              <button onclick="gerarEtiquetasSelecionadas()">Gerar Etiquetas PDF</button>
+            </div>
+            <p class="helper-text">
+              Selecione os produtos e informe a quantidade de etiquetas. Tamanho configurado: <b>5 cm x 8 cm</b>.
+            </p>
+            <table id="t_relatorios_produtos"></table>
+          </div>
+
+          <div class="card card-interno">
+            <div class="section-title">
+              <h4>Relatório de lucro por período</h4>
+              <button onclick="gerarRelatorioLucroPeriodo()">Gerar Relatório de Lucro</button>
+            </div>
+            <div class="row">
+              <input id="lucro_data_inicial" type="date">
+              <input id="lucro_data_final" type="date">
+              <select id="lucro_produto_filtro"></select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
